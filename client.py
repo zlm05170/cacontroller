@@ -3,6 +3,8 @@ import websockets
 import time
 import json
 import traceback
+import argparse
+import rospy
 
 async def start():
     uri = "ws://192.168.114.18:8887"
@@ -86,5 +88,6 @@ async def savefile(receivedata):
         json_file.writelines(receivedata)
 
 if __name__=='__main__':
+    rospy.init_node("simulator_drl")
     asyncio.get_event_loop().run_until_complete(start())
     asyncio.get_event_loop().run_forever()
