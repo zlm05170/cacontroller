@@ -3,60 +3,58 @@ import websockets
 import time
 import json
 import traceback
-import argparse
-import rospy
 
 async def start():
     uri = "ws://192.168.114.18:8887"
+    # counter1 = 0
+    # counter2 = 0
+    # counter3 = 0
     async with websockets.connect(uri, ping_timeout=None) as websocket:
         while True:
             # name = f"luman!"
             # await websocket.send(name)
             # #print(f"> {name}")
+            #await sendmessage(websocket)
+            gunnerus = None
+            ts1 = None
+            ts2 = None
             if not websocket.open:
                 print('reconnecting')
                 websocket = await websockets.connect(uri)
             else:
                 resp = await websocket.recv()                
                 #print(f"{resp}")
-                await evaluate(resp)
-                
+                actor1 = await evaluate(resp, 'GPSController', 'GPS1')
+                #print(actor1)
+                if actor1 != None:
+                    gunnerus = actor1
+                    clazz_ls(actor1)
+                    #counter1 = counter1 + 1
+                actor2 = await evaluate(resp, 'GPSController', 'Target Ship 1')
+                if actor2 != None:
+                    ts1 = actor2
+                    #counter2 = counter2 + 1
+                actor3 = await evaluate(resp, 'GPSController', 'Target Ship 2')
+                if actor3 != None:
+                    ts2 = actor3
+                    #counter3 = counter3 + 1
+            
+# async def sendmessage(websocket):
+#     name = f"luman"
+#     return websocket.send(name)
 
-async def evaluate(receivedata):
+async def evaluate(receivedata, clazz, name):
     try:
         data_dic = json.loads(receivedata[receivedata.index('{'):])
         # print(data_dic)
         # time.sleep(100)
         # data_str = json.dumps(data_dic, indent=4, sort_keys=True)
-        if data_dic["clazz"].find('GPSController'): 
-            if data_dic["name"] == "GPS1":
-                data = clazz_ls(data_dic)
-                #print(data)
-            elif data_dic["name"] == "Target Ship 1":
-                data = clazz_ls(data_dic)
-                print(data)
-            elif data_dic["name"] == "Target Ship 2":
-                data = clazz_ls(data_dic)
-                print(data)
-        elif data_dic["clazz"].find("TypedSixDOFActor"):     
-            if data_dic["name"] == "Gunnerus":                
-                data = clazz_ls(data_dic)
-            elif data_dic["name"] == "Target Ship 1":
-                data = clazz_ls(data_dic)
-            elif data_dic["name"] == "Target Ship 2":
-                data = clazz_ls(data_dic)
-        elif data_dic["clazz"].find("ThrusterActor"):
-            if data_dic["name"] == "Starboard":                
-                data = clazz_ls(data_dic)
-            elif data_dic["name"] == "Port":
-                data = clazz_ls(data_dic)
-            elif data_dic["name"] == "Tunnel":
-                data = clazz_ls(data_dic)
-        else:
-            pass  
+        x = False if data_dic['clazz'].find(clazz) == -1 else True 
+        y = (data_dic['name'] == name)
+        if x and y:
+            return data_dic
     except:
         traceback.print_exc()
-
 
 def clazz_ls(data_dic):
     #print(data_dic['output']) # list
@@ -80,7 +78,7 @@ def clazz_ls(data_dic):
         else:
             pass 
     all_data = [lon, lat, east, north, course, speed]     
-    return all_data
+    print(all_data)
 
 async def savefile(receivedata):
     #time.sleep(5)
@@ -88,6 +86,6 @@ async def savefile(receivedata):
         json_file.writelines(receivedata)
 
 if __name__=='__main__':
-    rospy.init_node("simulator_drl")
+    #rospy.init_node("simulator_drl")
     asyncio.get_event_loop().run_until_complete(start())
     asyncio.get_event_loop().run_forever()
