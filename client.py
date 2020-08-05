@@ -38,10 +38,11 @@ async def start():
                 if actor3 != None:
                     ts2 = actor3
                     #counter3 = counter3 + 1
+            await sendmessage()
             
-# async def sendmessage(websocket):
-#     name = f"luman"
-#     return websocket.send(name)
+async def sendmessage():
+    name = f"luman"
+    return websocket.send(name)
 
 async def evaluate(receivedata, clazz, name):
     try:

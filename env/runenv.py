@@ -2,7 +2,7 @@ import math
 import numpy as np
 import simulate, addEvent
 
-class run(object):
+class Env(object):
     def __init__(self):
         self.a = simulate.ship_model()
         self.b = addEvent.event
@@ -17,9 +17,4 @@ class run(object):
         self.h = 0.2
 
     def run_sim(self):
-        
-
-
-if __name__ == "__main__"
-    run_sim()
 

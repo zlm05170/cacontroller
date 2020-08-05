@@ -1,0 +1,3 @@
+import sim
+
+scene = sim()
