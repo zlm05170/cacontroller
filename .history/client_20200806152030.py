@@ -25,7 +25,7 @@ async def start():
                 resp = await websocket.recv()                
                 #print(f"{resp}")
                 actor1 = await evaluate(resp, 'GPSController', 'GPS1')
-                print(actor1)
+                #print(actor1)
                 if actor1 != None:
                     gunnerus = actor1
                     clazz_ls(actor1)

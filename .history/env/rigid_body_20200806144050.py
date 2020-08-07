@@ -21,13 +21,7 @@ class RigidBody:
     
     def get_paralleled_moment_of_inertia(self, arm, moment_of_inertia_cog_frame):
         return moment_of_inertia_cog_frame + (np.dot(arm, arm)*np.identity(3) - np.outer(arm, arm)) * self.mass
-    
-    def get_smtrx(self, v):
-        return np.array([0, -v[2], v[1]],
-                        [v[2], 0, -v[0]],
-                        [-v[1], v[0], 0])
-
-    def advance(self, dt, external_force_world_frame, external_torque_world_frame, added_mass_matrix_6x6 = np.zeros((6,6))):
+    def advance(self, external_force_world_frame, external_torque_world_frame, added_mass_matrix_6x6, dt):
         '''
         external_force is in world frame, relative to model origin
         external_torque is in world frame, relative to model origin
@@ -40,8 +34,8 @@ class RigidBody:
         # Set up 6x6 inertia matrix in model frame
         inertia_matrix_6x6 = np.zeros((6,6))
         inertia_matrix_6x6[0:3, 0:3] = np.identity(3) * self.mass
-        inertia_matrix_6x6[3:6, 3:6] = self.get_paralleled_moment_of_inertia(-self.center_of_gravity, self.moment_of_inertia)
-        inertia_matrix_6x6[0:3, 3:6] = self.get_smtrx(self.center_of_gravity) * self.mass
+        inertia_matrix_6x6[3:6, 3:6] = get_paralleled_moment_of_inertia(self.center_of_gravity, self.moment_of_inertia)
+        inertia_matrix_6x6[0:3, 3:6] = get_smtrx(self.center_of_gravity) * self.mass
         inertia_matrix_6x6[3:6, 0:3] = -inertia_matrix_6x6[0:3, 3:6]
         acceleration_translational_and_rotational_model_frame = np.inverse(inertia_matrix_6x6 + added_mass_matrix_6x6) * np.concatenate(external_force_model_frame, external_torque_model_frame)
         

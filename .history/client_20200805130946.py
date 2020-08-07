@@ -25,7 +25,7 @@ async def start():
                 resp = await websocket.recv()                
                 #print(f"{resp}")
                 actor1 = await evaluate(resp, 'GPSController', 'GPS1')
-                print(actor1)
+                #print(actor1)
                 if actor1 != None:
                     gunnerus = actor1
                     clazz_ls(actor1)
@@ -38,11 +38,11 @@ async def start():
                 if actor3 != None:
                     ts2 = actor3
                     #counter3 = counter3 + 1
-            # await sendmessage()
+            await sendmessage()
             
-# async def sendmessage():
-#     name = f"luman"
-#     return websocket.send(name)
+async def sendmessage():
+    name = f"luman"
+    return websocket.send(name)
 
 async def evaluate(receivedata, clazz, name):
     try:

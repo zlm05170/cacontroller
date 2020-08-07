@@ -27,7 +27,7 @@ class RigidBody:
                         [v[2], 0, -v[0]],
                         [-v[1], v[0], 0])
 
-    def advance(self, dt, external_force_world_frame, external_torque_world_frame, added_mass_matrix_6x6 = np.zeros((6,6))):
+    def advance(self, external_force_world_frame, external_torque_world_frame, added_mass_matrix_6x6, dt):
         '''
         external_force is in world frame, relative to model origin
         external_torque is in world frame, relative to model origin

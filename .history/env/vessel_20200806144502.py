@@ -22,14 +22,14 @@ class Vessel(six_dof_actor.SixDOFActor):
         first_order_damping_force_and_torque = self.first_order_damping_matrix * velocity_translational_model_frame
         second_order_damping_force_and_torque = self.second_order_damping_matrix * np.multiply(velocity_translational_and_rotational_model_frame, velocity_translational_and_rotational_model_frame)
         total_damping_force_and_torque = first_order_damping_force_and_torque + second_order_damping_force_and_torque
-        return -total_damping_force_and_torque[0:3], -total_damping_force_and_torque[3:6]
+        return total_damping_force_and_torque[0:3], total_damping_force_and_torque[3:6]
     
     def get_restoring_force_and_torque(self):
         '''
         Return in world frame
         '''
         yaw, pitch, roll = self.rotation.yaw_pitch_roll()
-        return -self.restoring_matrix * np.array([self.position[0], self.position[1], self.position[2], roll, pitch, yaw])
+        return self.restoring_matrix * np.array([self.position[0], self.position[1], self.position[2], roll, pitch, yaw])
 
     def update(self, dt : float):
         gravity_force = np.zeros(6)
