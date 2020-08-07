@@ -70,15 +70,7 @@ async def start():
                 resp = await websocket.recv()                
                 try:
                     data_dic = json.loads(resp[resp.index('{'):])
-                    for i in range(len(actor_list)):
-                        actor_info = actor_info_list[i]
-                        actor = await evaluate(data_dic, actor_info['clazz'], actor_info['name'])
-                        if actor != None:
-                            print('dedao')
-                            # actor_info['uuid'] = actor['uuid']
-                            # actor_info['parent_uuid'] = get_port_value_by_name(actor['output'],'PARENT')
-                            # print_port_data_by_index(find_port_index_by_name(actor_list[0], 'output', 'longitude'.upper()))
-                            # #print(print_port_data_by_index)
+                    await evaluate(data_dic)
                 except:
                     traceback.print_exc()                
         await sendmessage()
@@ -87,11 +79,21 @@ async def start():
 #     name = f"luman"
 #     return websocket.send(name)
 
-async def evaluate(data_dic, clazz, name):       
-    x = False if data_dic['clazz'].find(clazz) == -1 else True 
-    y = (data_dic['name'] == name)
-    if x and y:
-        return data_dic
+async def evaluate(data_dic):       
+    # x = False if data_dic['clazz'].find(clazz) == -1 else True 
+    # y = (data_dic['name'] == name)
+    for i in range(len(actor_list)):
+
+        actor_info = actor_info_list[i]
+        actor = await evaluate(resp, actor_info['clazz'], actor_info['name'])
+        if actor != None:
+            actor_info['uuid'] = actor['uuid']
+            actor_info['parent_uuid'] = get_port_value_by_name(actor['output'],'PARENT')
+            print_port_data_by_index(find_port_index_by_name(actor_list[0], 'output', 'longitude'.upper()))
+            #print(print_port_data_by_index)
+    
+        if x and y:
+            return data_dic
 
 def clazz_ls(data_dic):
     #print(data_dic['output']) # list

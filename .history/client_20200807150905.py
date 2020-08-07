@@ -3,25 +3,10 @@ import websockets
 import time
 import json
 import traceback
+class DataBuffer:
 
-def view_actor_data(actor, port_type, port_name):
-    pass
-
-def get_port_value_by_name(port_list, name):
-    for port in port_list:
-        if port['port']['name'] == name:
-            return port['value']
-
-def find_port_index_by_name(actor, port_type, port_name):
-    port_list = actor[port_type]
-    num_port = len(port_list)
-    for i in range(num_port):
-        if port_list[i]['port']['name'] == port_name:
-            return i
-
-def print_port_data_by_index(actor, port_type, index):
-    print(actor[port_type][index]['port']['name'] + ':  ' + actor[port_type][index]['port']['value'])
-
+    def __init__(self):
+        self.data
 async def start():
     uri = "ws://192.168.114.18:8887"
     actor_info = {
@@ -53,7 +38,6 @@ async def start():
 
     actor_info_list = [gps_gunnerus, gps_target_ship_1, gps_target_ship_2, gunnerus_thruster_port, gunnerus_thruster_starboard]
     actor_list = [None for i in range(5)]
-
     async with websockets.connect(uri, ping_timeout=None) as websocket:
         while True:
             # name = f"luman!"
@@ -68,34 +52,54 @@ async def start():
                 websocket = await websockets.connect(uri)
             else:
                 resp = await websocket.recv()                
-                try:
-                    data_dic = json.loads(resp[resp.index('{'):])
-                    for i in range(len(actor_list)):
-                        actor_info = actor_info_list[i]
-                        actor = await evaluate(data_dic, actor_info['clazz'], actor_info['name'])
-                        if actor != None:
-                            print('dedao')
-                            # actor_info['uuid'] = actor['uuid']
-                            # actor_info['parent_uuid'] = get_port_value_by_name(actor['output'],'PARENT')
-                            # print_port_data_by_index(find_port_index_by_name(actor_list[0], 'output', 'longitude'.upper()))
-                            # #print(print_port_data_by_index)
-                except:
-                    traceback.print_exc()                
-        await sendmessage()
+                #print(f"{resp}")
+                for i in range(len(actor_list)):
+                    actor_info = actor_info_list[i]
+                    actor_list[i] = await evaluate(resp, actor_info['clazz'], actor_info['name'])
+                
+                # actor1 = await evaluate(resp, 'GPSController', 'GPS1')
+                # if actor1 != None:
+                #     clazz_ls(actor1) # gunnerus
+                # actor2  = await evaluate(resp, 'ThrusterActor', 'Port')
+                # if actor2 != None:
+                #     clazz_ls(actor2)
+                # actor3  = await evaluate(resp, 'ThrusterActor', 'Starboard')
+                # if actor3 != None:
+                #     #print(actor3)
+                #     clazz_ls(actor3)    
+                # actor4 = await evaluate(resp, 'GPSController', 'Target Ship 1')
+                # if actor4 != None:
+                #     clazz_ls(actor4) # ts1 = actor2
+                # actor5 = await evaluate(resp, 'GPSController', 'Target Ship 2')
+                # if actor5 != None:
+                #     clazz_ls(actor5) # ts2 = actor3
+                # actor5  = await evaluate(resp, 'ThrusterActor', 'Starboard')
+                # if actor4 != None:
+                    #print(actor5)
+                    #clazz_ls(actor5)
+                    
+            # await sendmessage()
             
 # async def sendmessage():
 #     name = f"luman"
 #     return websocket.send(name)
 
-async def evaluate(data_dic, clazz, name):       
-    x = False if data_dic['clazz'].find(clazz) == -1 else True 
-    y = (data_dic['name'] == name)
-    if x and y:
-        return data_dic
+async def evaluate(receivedata, clazz, name):
+    try:
+        data_dic = json.loads(receivedata[receivedata.index('{'):])
+        # print(data_dic)
+        # time.sleep(100)
+        # data_str = json.dumps(data_dic, indent=4, sort_keys=True)
+        x = False if data_dic['clazz'].find(clazz) == -1 else True 
+        y = (data_dic['name'] == name)
+        if x and y:
+            return data_dic
+    except:
+        traceback.print_exc()
 
 def clazz_ls(data_dic):
     #print(data_dic['output']) # list
-    lon, lat, east, north, course, speed, rpm, alpha = 0.0, 0.0, 0.0, 0.0, 0.0, [], [], []
+    lon, lat, east, north, course, speed, rpm, alpha = 0.0, 0.0, 0.0, 0.0, 0.0, [], 0.0, 0.0
     for message in data_dic['output']:
         port = message['port']['name']
         if port == "longitude".upper():
@@ -130,5 +134,4 @@ async def savefile(receivedata):
 if __name__=='__main__':
     #rospy.init_node("simulator_drl")
     asyncio.get_event_loop().run_until_complete(start())
-
     asyncio.get_event_loop().run_forever()
