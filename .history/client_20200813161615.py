@@ -101,11 +101,12 @@ async def start():
                     for i in range(len(actor_list)):
                         actor_info = actor_info_list[i]
                         actor = await evaluate_actor(data_dic, actor_info['clazz'], actor_info['name']) # dic
-                        if actor != None:                           
+                        if actor != None:
                             port_info['clazzname'] = str(actor_info['name'])
+                            print(port_info)
                             for i in range(len(port_name_ls)):
-                                dic, value = find_port_index_by_name(actor, 'output', port_name_ls[i].upper())
-                                #print(dic)
+                                print(port_name_ls[i].upper())
+                                #dic, value = find_port_index_by_name(actor, 'output', port_name_ls[i].upper())
                                 #dic, value = get_port_data_by_index(actor, 'output', index)
                         #         port_info[port_name_ls[i]] == value
                         #         print(dic)

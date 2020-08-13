@@ -28,6 +28,7 @@ def find_port_index_by_name(actor, port_type, port_name):
                     
                 return dic,value
                     
+
 def get_port_data_by_index(actor, port_type, index):
     if actor[port_type][index]['port']['name'] == "WORLD_VELOCITY".upper():
         value_ls = actor[port_type][index]['port']['value']['valueObjects']['value']
@@ -101,12 +102,12 @@ async def start():
                     for i in range(len(actor_list)):
                         actor_info = actor_info_list[i]
                         actor = await evaluate_actor(data_dic, actor_info['clazz'], actor_info['name']) # dic
-                        if actor != None:                           
+                        if actor != None:
+                            print(actor_info['name'])
                             port_info['clazzname'] = str(actor_info['name'])
                             for i in range(len(port_name_ls)):
-                                dic, value = find_port_index_by_name(actor, 'output', port_name_ls[i].upper())
-                                #print(dic)
-                                #dic, value = get_port_data_by_index(actor, 'output', index)
+                                index = find_port_index_by_name(actor, 'output', port_name_ls[i].upper())
+                                dic, value = get_port_data_by_index(actor, 'output', index)
                         #         port_info[port_name_ls[i]] == value
                         #         print(dic)
                 except:

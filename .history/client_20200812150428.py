@@ -9,37 +9,17 @@ def view_actor_data(actor, port_type, port_name):
 def get_port_value_by_name(port_list, name):
     for port in port_list:
         if port['port']['name'] == name:
-            print("ok")
-            #return port['value']
+            return port['value']
 
 def find_port_index_by_name(actor, port_type, port_name):
     port_list = actor[port_type]
     num_port = len(port_list)
     for i in range(num_port):
         if port_list[i]['port']['name'] == port_name:
-            if actor[port_type][i]['port']['name'] == "WORLD_VELOCITY".upper():
-                value_ls = actor[port_type][i]['port']['value']['valueObjects']['value']
-                for v in value_ls:
-                    dic = actor[port_type][i]['port']['name'] + ':  ' + actor[port_type][i]['port']['value']['value']
-                    value = actor[port_type][i].append(v)
-                else:
-                    dic = actor[port_type][i]['port']['name'] + ':  ' + actor[port_type][i]['port']['value']['value']
-                    value = actor[port_type][i]['port']['value']['value']
-                    
-                return dic,value
-                    
-def get_port_data_by_index(actor, port_type, index):
-    if actor[port_type][index]['port']['name'] == "WORLD_VELOCITY".upper():
-        value_ls = actor[port_type][index]['port']['value']['valueObjects']['value']
-        for v in value_ls:
-            dic = actor[port_type][index]['port']['name'] + ':  ' + actor[port_type][index]['port']['value']['value']
-            value = actor[port_type][index].append(v)
-    else:
-        dic = actor[port_type][index]['port']['name'] + ':  ' + actor[port_type][index]['port']['value']['value']
-        value = actor[port_type][index]['port']['value']['value']
-        
-        return dic, value
+            return i
 
+def print_port_data_by_index(actor, port_type, index):
+    print(actor[port_type][index]['port']['name'] + ':  ' + actor[port_type][index]['port']['value'])
 
 async def start():
     uri = "ws://192.168.114.18:8887"
@@ -49,22 +29,7 @@ async def start():
         'uuid' : None,
         'parent_uuid' : None
     }
-
-    port_info = {
-        'clazzname': '',
-        'LONGITUDE': None,
-        'LATITUDE': None,
-        'EASTING': None,
-        'NORTHING': None,
-        'BEARING': None,
-        'WORLD_VELOCITY':[],
-        'ANGLE': [], # starboard rudder, port rudder
-        'ACTUAL_RPM': [] # starboard rpm, port rpm
-    }
-    port_name_ls = []
-    for name in port_info:
-        port_name_ls.append(name) # port's name
-
+    
     gps_gunnerus = actor_info.copy()
     gps_gunnerus['clazz'] = 'GPSController'
     gps_gunnerus['name'] = 'GPS1'
@@ -90,44 +55,44 @@ async def start():
 
     async with websockets.connect(uri, ping_timeout=None) as websocket:
         while True:
+            # name = f"luman!"
+            # await websocket.send(name)
+            # #print(f"> {name}")
+            #await sendmessage(websocket)
             if not websocket.open:
                 print('reconnecting')
                 websocket = await websockets.connect(uri)
             else:
-                resp = await websocket.recv()                      
+                resp = await websocket.recv()
+                #print(f"{resp}")                       
                 try:
                     data_dic = json.loads(resp[resp.index('{'):])
-                    #print(data_dic)
                     for i in range(len(actor_list)):
                         actor_info = actor_info_list[i]
-                        actor = await evaluate_actor(data_dic, actor_info['clazz'], actor_info['name']) # dic
-                        if actor != None:                           
-                            port_info['clazzname'] = str(actor_info['name'])
-                            for i in range(len(port_name_ls)):
-                                dic, value = find_port_index_by_name(actor, 'output', port_name_ls[i].upper())
-                                #print(dic)
-                                #dic, value = get_port_data_by_index(actor, 'output', index)
-                        #         port_info[port_name_ls[i]] == value
-                        #         print(dic)
-                except:
-                    traceback.print_exc()               
-    # await def sendmessage():
+                        actor = await evaluate(data_dic, actor_info['clazz'], actor_info['name'])
+                        if actor != None:   
+                            actor_info['uuid'] = actor['uuid']
+                            #print(actor_list)
+                            #print(type(actor['output']))
+                            #actor_info['parent_uuid'] = get_port_value_by_name(actor['output'],'PARENT')
+                            index = find_port_index_by_name(actor, 'output', 'longitude'.upper())
+                            print(index)
 
-async def evaluate_actor(data_dic, clazz, name):       
+                            # print_port_data_by_index(find_port_index_by_name(actor_list[0], 'output', 'longitude'.upper()))
+                            # print(print_port_data_by_index)
+                except:
+                    traceback.print_exc()                
+        await sendmessage()
+            
+# async def sendmessage():
+#     name = f"luman"
+#     return websocket.send(name)
+
+async def evaluate(data_dic, clazz, name):       
     x = False if data_dic['clazz'].find(clazz) == -1 else True 
     y = (data_dic['name'] == name)
     if x and y:
         return data_dic
-
-def evaluate_port(actor, port_type, port_name): # port_name is the list of name of port
-    #actor_info['uuid'] = actor['uuid']
-    #print(actor_list)
-    #actor_info['parent_uuid'] = get_port_value_by_name(actor['output'],'PARENT')
-    port_ls = actor[port_type]
-    for i in range(len(port_ls)):
-        if port_ls[i]['port']['name'] == port_name:
-            print("ok")
-
 
 def clazz_ls(data_dic):
     #print(data_dic['output']) # list

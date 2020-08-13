@@ -17,17 +17,8 @@ def find_port_index_by_name(actor, port_type, port_name):
     num_port = len(port_list)
     for i in range(num_port):
         if port_list[i]['port']['name'] == port_name:
-            if actor[port_type][i]['port']['name'] == "WORLD_VELOCITY".upper():
-                value_ls = actor[port_type][i]['port']['value']['valueObjects']['value']
-                for v in value_ls:
-                    dic = actor[port_type][i]['port']['name'] + ':  ' + actor[port_type][i]['port']['value']['value']
-                    value = actor[port_type][i].append(v)
-                else:
-                    dic = actor[port_type][i]['port']['name'] + ':  ' + actor[port_type][i]['port']['value']['value']
-                    value = actor[port_type][i]['port']['value']['value']
-                    
-                return dic,value
-                    
+            return i
+
 def get_port_data_by_index(actor, port_type, index):
     if actor[port_type][index]['port']['name'] == "WORLD_VELOCITY".upper():
         value_ls = actor[port_type][index]['port']['value']['valueObjects']['value']
@@ -52,14 +43,16 @@ async def start():
 
     port_info = {
         'clazzname': '',
-        'LONGITUDE': None,
-        'LATITUDE': None,
-        'EASTING': None,
-        'NORTHING': None,
-        'BEARING': None,
-        'WORLD_VELOCITY':[],
-        'ANGLE': [], # starboard rudder, port rudder
-        'ACTUAL_RPM': [] # starboard rpm, port rpm
+        'Longitude': None,
+        'latitude': None,
+        'UTM East': None,
+        'UTM North': None,
+        'course': None,
+        'speed':[],
+        'rudderP': None,
+        'rpmP': None,
+        'rudderS': None,
+        'rpmS': None
     }
     port_name_ls = []
     for name in port_info:
@@ -101,12 +94,13 @@ async def start():
                     for i in range(len(actor_list)):
                         actor_info = actor_info_list[i]
                         actor = await evaluate_actor(data_dic, actor_info['clazz'], actor_info['name']) # dic
-                        if actor != None:                           
-                            port_info['clazzname'] = str(actor_info['name'])
-                            for i in range(len(port_name_ls)):
-                                dic, value = find_port_index_by_name(actor, 'output', port_name_ls[i].upper())
-                                #print(dic)
-                                #dic, value = get_port_data_by_index(actor, 'output', index)
+                        if actor != None:
+                            print(actor_info['name'])
+                            port_info['clazzname'] == actor_info['name']
+                            print(port_info['clazzname'])
+                        #     for i in range(len(port_name_ls)):
+                        #         index = find_port_index_by_name(actor, 'output', port_name_ls[i].upper())
+                        #         dic, value = get_port_data_by_index(actor, 'output', index)
                         #         port_info[port_name_ls[i]] == value
                         #         print(dic)
                 except:

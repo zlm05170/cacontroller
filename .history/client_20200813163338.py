@@ -104,6 +104,7 @@ async def start():
                         if actor != None:                           
                             port_info['clazzname'] = str(actor_info['name'])
                             for i in range(len(port_name_ls)):
+                            #     #print(port_name_ls[i].upper())
                                 dic, value = find_port_index_by_name(actor, 'output', port_name_ls[i].upper())
                                 #print(dic)
                                 #dic, value = get_port_data_by_index(actor, 'output', index)
