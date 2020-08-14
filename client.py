@@ -6,40 +6,25 @@ import traceback
 
 def view_actor_data(actor, port_type, port_name):
     pass
-def get_port_value_by_name(port_list, name):
-    for port in port_list:
-        if port['port']['name'] == name:
-            print("ok")
-            #return port['value']
 
-def find_port_index_by_name(actor, port_type, port_name):
+def find_port_index_by_name(actor, port_type, port_name_ls):
     port_list = actor[port_type]
     num_port = len(port_list)
-    for i in range(num_port):
-        if port_list[i]['port']['name'] == port_name:
-            if actor[port_type][i]['port']['name'] == "WORLD_VELOCITY".upper():
-                value_ls = actor[port_type][i]['port']['value']['valueObjects']['value']
-                for v in value_ls:
-                    dic = actor[port_type][i]['port']['name'] + ':  ' + actor[port_type][i]['port']['value']['value']
-                    value = actor[port_type][i].append(v)
+    num_port_name = len(port_name_ls)
+    speed = []
+    oth_info = []
+    for i in range(num_port_name): # 5
+        for j in range(num_port): # 34
+            port_name = port_list[j]['port']['name']
+            if port_name == port_name_ls[i]:
+                if port_name == "WORLD_VELOCITY".upper():
+                    value_ls = port_list[j]['value']['valueObjects']
+                    for v in value_ls:
+                        speed.append(v['value'])                                     
                 else:
-                    dic = actor[port_type][i]['port']['name'] + ':  ' + actor[port_type][i]['port']['value']['value']
-                    value = actor[port_type][i]['port']['value']['value']
-                    
-                return dic,value
-                    
-def get_port_data_by_index(actor, port_type, index):
-    if actor[port_type][index]['port']['name'] == "WORLD_VELOCITY".upper():
-        value_ls = actor[port_type][index]['port']['value']['valueObjects']['value']
-        for v in value_ls:
-            dic = actor[port_type][index]['port']['name'] + ':  ' + actor[port_type][index]['port']['value']['value']
-            value = actor[port_type][index].append(v)
-    else:
-        dic = actor[port_type][index]['port']['name'] + ':  ' + actor[port_type][index]['port']['value']['value']
-        value = actor[port_type][index]['port']['value']['value']
-        
-        return dic, value
-
+                    oth_info.append(port_list[j]['value']['value'])
+                    break 
+    return [oth_info,speed]                                                               
 
 async def start():
     uri = "ws://192.168.114.18:8887"
@@ -61,9 +46,11 @@ async def start():
         'ANGLE': [], # starboard rudder, port rudder
         'ACTUAL_RPM': [] # starboard rpm, port rpm
     }
+
     port_name_ls = []
     for name in port_info:
-        port_name_ls.append(name) # port's name
+        port_name_ls.append(name) 
+    port_name_ls.pop(0) # port's name
 
     gps_gunnerus = actor_info.copy()
     gps_gunnerus['clazz'] = 'GPSController'
@@ -88,7 +75,7 @@ async def start():
     actor_info_list = [gps_gunnerus, gps_target_ship_1, gps_target_ship_2, gunnerus_thruster_port, gunnerus_thruster_starboard]
     actor_list = [None for i in range(5)]
 
-    async with websockets.connect(uri, ping_timeout=None) as websocket:
+    async with websockets.connect(uri, ping_timeout=None) as websocket: 
         while True:
             if not websocket.open:
                 print('reconnecting')
@@ -101,14 +88,12 @@ async def start():
                     for i in range(len(actor_list)):
                         actor_info = actor_info_list[i]
                         actor = await evaluate_actor(data_dic, actor_info['clazz'], actor_info['name']) # dic
-                        if actor != None:                           
-                            port_info['clazzname'] = str(actor_info['name'])
-                            for i in range(len(port_name_ls)):
-                                dic, value = find_port_index_by_name(actor, 'output', port_name_ls[i].upper())
-                                #print(dic)
-                                #dic, value = get_port_data_by_index(actor, 'output', index)
-                        #         port_info[port_name_ls[i]] == value
-                        #         print(dic)
+                        if actor != None:
+                            #print(actor['name'])
+                            if actor['name'] == 'Starboard' or  actor['name'] == 'Port':
+                                find_port_index_by_name(actor, 'output', port_name_ls)
+                            else:
+                                print(find_port_index_by_name(actor, 'output', port_name_ls))                           
                 except:
                     traceback.print_exc()               
     # await def sendmessage():
@@ -119,44 +104,34 @@ async def evaluate_actor(data_dic, clazz, name):
     if x and y:
         return data_dic
 
-def evaluate_port(actor, port_type, port_name): # port_name is the list of name of port
-    #actor_info['uuid'] = actor['uuid']
-    #print(actor_list)
-    #actor_info['parent_uuid'] = get_port_value_by_name(actor['output'],'PARENT')
-    port_ls = actor[port_type]
-    for i in range(len(port_ls)):
-        if port_ls[i]['port']['name'] == port_name:
-            print("ok")
-
-
-def clazz_ls(data_dic):
-    #print(data_dic['output']) # list
-    lon, lat, east, north, course, speed, rpm, alpha = 0.0, 0.0, 0.0, 0.0, 0.0, [], [], []
-    for message in data_dic['output']:
-        port = message['port']['name']
-        if port == "longitude".upper():
-            lon = message['value']['value']
-        elif port == "latitude".upper():
-            lat = message['value']['value']
-        elif port == "easting".upper():
-            east = message['value']['value']
-        elif port == "northing".upper():
-            north = message['value']['value']
-        elif port == "bearing".upper():
-            course = message['value']['value']
-        elif port == "WORLD_VELOCITY".upper():
-            value_ls = message['value']['valueObjects']
-            for v in value_ls:
-                speed.append(v['value'])
-        elif port == "ACTUAL_RPM".upper():
-            rpm = message['value']['value']
-        elif port == "ANGLE".upper():
-            alpha = message['value']['value']
-        else:
-            pass 
-    all_data = [lon, lat, east, north, course, speed, rpm, alpha]     
-    #return all_data
-    print(all_data)
+# def clazz_ls(data_dic):
+#     #print(data_dic['output']) # list
+#     lon, lat, east, north, course, speed, rpm, alpha = 0.0, 0.0, 0.0, 0.0, 0.0, [], [], []
+#     for message in data_dic['output']:
+#         port = message['port']['name']
+#         if port == "longitude".upper():
+#             lon = message['value']['value']
+#         elif port == "latitude".upper():
+#             lat = message['value']['value']
+#         elif port == "easting".upper():
+#             east = message['value']['value']
+#         elif port == "northing".upper():
+#             north = message['value']['value']
+#         elif port == "bearing".upper():
+#             course = message['value']['value']
+#         elif port == "WORLD_VELOCITY".upper():
+#             value_ls = message['value']['valueObjects']
+#             for v in value_ls:
+#                 speed.append(v['value'])
+#         elif port == "ACTUAL_RPM".upper():
+#             rpm = message['value']['value']
+#         elif port == "ANGLE".upper():
+#             alpha = message['value']['value']
+#         else:
+#             pass 
+#     all_data = [lon, lat, east, north, course, speed, rpm, alpha]     
+#     #return all_data
+#     print(all_data)
 
 async def savefile(receivedata):
     #time.sleep(5)
