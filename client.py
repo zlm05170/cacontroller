@@ -3,6 +3,7 @@ import websockets
 import time
 import json
 import traceback
+import itertools
 
 def view_actor_data(actor, port_type, port_name):
     pass
@@ -42,6 +43,17 @@ def find_actuator_port_value(actor, port_type, port_name_ls):
                     velocity = port_list[j]['value']['value']
                     rpm.append(velocity)                            
     return rudder, rpm   
+
+def ls_to_dic(receivedata, port_gps_info):
+    num_port = len(receivedata)
+    num_port_name = len(port_gps_info)
+    result = dict()
+    for i in range(0, num_port, num_port_name):
+        for key, val in zip(port_gps_info,receivedata[i:i+num_port_name]):
+            if key not in result:
+                result[key] = []
+            result[key].append(val)
+    return result
 
 async def start():
     uri = "ws://192.168.114.18:8887"
@@ -98,6 +110,7 @@ async def start():
 
     actor_info_list = [gps_gunnerus, gps_target_ship_1, gps_target_ship_2, gunnerus_thruster_port, gunnerus_thruster_starboard]
     actor_list = [None for i in range(5)]
+    actuator_json_list = [None for i in range(2)]
 
     async with websockets.connect(uri, ping_timeout=None) as websocket: 
         while True:
@@ -111,21 +124,36 @@ async def start():
                     #print(data_dic)
                     for i in range(len(actor_list)):
                         actor_info = actor_info_list[i]
-                        actor = await evaluate_actor(data_dic, actor_info['clazz'], actor_info['name']) # dic
+                        actor = await evaluate_actor(data_dic, actor_info['clazz'], actor_info['name']) # dic                        
                         if actor != None:
-                            if actor['name'] == 'Starboard' or  actor['name'] == 'Port':
+                            if actor['name'] == 'Starboard': 
+                                actuator_json = set_actuator_json(actor, 'input', 100) 
+                            elif actor['name'] == 'Port':
+                                actuator_json = set_actuator_json(actor, 'input', 100)
+                                actuator_json_list.append(actuator_json)  
                                 print(find_actuator_port_value(actor, 'output', port_actuator_name_ls))
                             else:
-                                print(find_gps_port_value(actor, 'output', port_gps_name_ls))                          
+                                print(find_gps_port_value(actor, 'output', port_gps_name_ls))
                 except:
                     traceback.print_exc()               
-    # await def sendmessage():
+                websocket.send(actuator_json_list)
+
+def set_actuator_json(actor, port_type, alpha):
+    port_list = actor[port_type]
+    num_port = len(port_list)
+    for i in range(num_port):
+        port_name = port_list[i]['port']['name']
+        if port_name == "ANGLE".upper():
+            port_list[i]['value']['value'] += 0.1 * alpha
+        elif port_name == "ACTUAL_RPM".upper():
+            port_list[i]['value']['value'] += 0.1 * alpha
+    return actor
 
 async def evaluate_actor(data_dic, clazz, name):       
     x = False if data_dic['clazz'].find(clazz) == -1 else True 
     y = (data_dic['name'] == name)
     if x and y:
-        return data_dic
+        return data_dic     
 
 async def savefile(receivedata):
     #time.sleep(5)
