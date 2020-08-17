@@ -4,6 +4,7 @@ import time
 import json
 import traceback
 import itertools
+import numpy as np
 
 def view_actor_data(actor, port_type, port_name):
     pass
@@ -14,6 +15,7 @@ def find_gps_port_value(actor, port_type, port_name_ls):
     num_port_name = len(port_name_ls)
     speed = []
     gps_info = []
+    result = [[], []]
     for i in range(num_port_name): # 5,2
         for j in range(num_port): # 34, 34
             port_name = port_list[j]['port']['name']
@@ -21,28 +23,31 @@ def find_gps_port_value(actor, port_type, port_name_ls):
                 if port_name == "WORLD_VELOCITY".upper():
                     value_ls = port_list[j]['value']['valueObjects']
                     for v in value_ls:
-                        speed.append(v['value'])                                                      
+                        speed.append(v['value'])
+                    result[1]= speed                                                           
                 else:
                     gps_info.append(port_list[j]['value']['value'])
+                    result[0] = gps_info
                     break 
-    return gps_info, speed                                                                
+    return result                                                                
 
 def find_actuator_port_value(actor, port_type, port_name_ls):
     port_list = actor[port_type]
     num_port = len(port_list)
     num_port_name = len(port_name_ls)
-    rudder, rpm = [], []
+    result = []
     for i in range(num_port_name): # 5, 2
         for j in range(num_port): # 34, 34
             port_name = port_list[j]['port']['name']
             if port_name == port_name_ls[i]:                                                      
                 if port_name == "ANGLE".upper():
                     angle = port_list[j]['value']['value']
-                    rudder.append(angle)
+                    result.append(angle)
                 elif port_name == "ACTUAL_RPM".upper():
                     velocity = port_list[j]['value']['value']
-                    rpm.append(velocity)                            
-    return rudder, rpm   
+                    result.append(velocity)                            
+    return result
+    
 
 def ls_to_dic(receivedata, port_gps_info):
     num_port = len(receivedata)
@@ -100,6 +105,18 @@ async def start():
     gps_target_ship_2['clazz'] = 'GPSController'
     gps_target_ship_2['name'] = 'Target Ship 2'
 
+    gps_target_ship_3 = actor_info.copy()
+    gps_target_ship_3['clazz'] = 'GPSController'
+    gps_target_ship_3['name'] = 'Target Ship 3'
+
+    gps_target_ship_4 = actor_info.copy()
+    gps_target_ship_4['clazz'] = 'GPSController'
+    gps_target_ship_4['name'] = 'Target Ship 4'
+
+    gps_target_ship_5 = actor_info.copy()
+    gps_target_ship_5['clazz'] = 'GPSController'
+    gps_target_ship_5['name'] = 'Target Ship 5'
+
     gunnerus_thruster_port = actor_info.copy()
     gunnerus_thruster_port['clazz'] = 'ThrusterActor'
     gunnerus_thruster_port['name'] = 'Port'
@@ -108,35 +125,48 @@ async def start():
     gunnerus_thruster_starboard['clazz'] = 'ThrusterActor'
     gunnerus_thruster_starboard['name'] = 'Starboard'
 
-    actor_info_list = [gps_gunnerus, gps_target_ship_1, gps_target_ship_2, gunnerus_thruster_port, gunnerus_thruster_starboard]
-    actor_list = [None for i in range(5)]
-    actuator_json_list = [None for i in range(2)]
-
+    actor_info_list = [gps_gunnerus, gps_target_ship_1, gps_target_ship_2, gps_target_ship_3, gps_target_ship_4, gps_target_ship_5, gunnerus_thruster_port, gunnerus_thruster_starboard]
+    actuator_get_json = []
+    port_value = []
     async with websockets.connect(uri, ping_timeout=None) as websocket: 
         while True:
             if not websocket.open:
                 print('reconnecting')
                 websocket = await websockets.connect(uri)
             else:
-                resp = await websocket.recv()                      
+                resp = await websocket.recv()
+                actuator_set_json = None                                              
                 try:
-                    data_dic = json.loads(resp[resp.index('{'):])
-                    #print(data_dic)
-                    for i in range(len(actor_list)):
+                    data_dic = json.loads(resp[resp.index('{'):])                   
+                    for i in range(8):
                         actor_info = actor_info_list[i]
                         actor = await evaluate_actor(data_dic, actor_info['clazz'], actor_info['name']) # dic                        
                         if actor != None:
-                            if actor['name'] == 'Starboard': 
-                                actuator_json = set_actuator_json(actor, 'input', 100) 
-                            elif actor['name'] == 'Port':
-                                actuator_json = set_actuator_json(actor, 'input', 100)
-                                actuator_json_list.append(actuator_json)  
-                                print(find_actuator_port_value(actor, 'output', port_actuator_name_ls))
+                            if actor['name'] == 'Starboard' or actor['name'] == 'Port':
+                                actuator_get_json.append(actor)
+                                actuator_set_json = set_actuator_json(actor, 'input', 1000)                                                            
+                                actuator_port_value = find_actuator_port_value(actor, 'output', port_actuator_name_ls)                               
+                                port_value.append(actuator_port_value)
                             else:
-                                print(find_gps_port_value(actor, 'output', port_gps_name_ls))
+                                gps_port_value = find_gps_port_value(actor, 'output', port_gps_name_ls)
+                                #ls_to_dic(gps_port_value, port_gps_name_ls)
+                                port_value.append(gps_port_value)                                                              
+                        print(port_value)     
                 except:
-                    traceback.print_exc()               
-                websocket.send(actuator_json_list)
+                    traceback.print_exc()
+                # save_ls_file(port_value)
+                # save_json_file(actuator_get_json)
+                # get = trans_json(actuator_get_json)
+                if actuator_set_json != None:
+                    # print(json.dumps(actuator_set_json))                
+                    websocket.send(json.dumps(actuator_set_json))               
+
+
+async def evaluate_actor(data_dic, clazz, name):       
+    x = False if data_dic['clazz'].find(clazz) == -1 else True 
+    y = (data_dic['name'] == name)
+    if x and y:
+        return data_dic 
 
 def set_actuator_json(actor, port_type, alpha):
     port_list = actor[port_type]
@@ -149,16 +179,17 @@ def set_actuator_json(actor, port_type, alpha):
             port_list[i]['value']['value'] += 0.1 * alpha
     return actor
 
-async def evaluate_actor(data_dic, clazz, name):       
-    x = False if data_dic['clazz'].find(clazz) == -1 else True 
-    y = (data_dic['name'] == name)
-    if x and y:
-        return data_dic     
+def save_ls_file(receivedata): # list
+    with open('my_file.txt', 'w') as f:
+        for item in receivedata:
+            f.write("%s\n" % item)
 
-async def savefile(receivedata):
-    #time.sleep(5)
-    with open('serverdata.json', 'w') as json_file:
-        json_file.writelines(receivedata)
+def save_json_file(receivedata): # dic
+    with open('my_file.json', 'w') as f:
+        json.dump(receivedata, f)
+    # f.close()
+def trans_json(actuator_get_json):
+    return json.loads(actuator_get_json[actuator_get_json.index('['):])
 
 if __name__=='__main__':
     #rospy.init_node("simulator_drl")
