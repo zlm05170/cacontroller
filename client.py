@@ -146,7 +146,7 @@ async def start():
                         if actor != None:
                             if actor['name'] == 'Starboard' or actor['name'] == 'Port':
                                 actuator_get_json.append(actor)
-                                actuator_set_json = set_actuator_json(actor, 'input', 1000)                                                            
+                                actuator_set_json = set_actuator_json(actor, 'input', 90)                                                            
                                 actuators_set_json.append(actuator_set_json)
                                 actuator_port_value = find_actuator_port_value(actor, 'output', port_actuator_name_ls)                               
                                 port_value.append(actuator_port_value)
@@ -154,15 +154,16 @@ async def start():
                                 gps_port_value = find_gps_port_value(actor, 'output', port_gps_name_ls)
                                 #ls_to_dic(gps_port_value, port_gps_name_ls)
                                 port_value.append(gps_port_value)                                                              
-                        #print(port_value)     
+                            
                 except:
                     traceback.print_exc()
-                # save_ls_file(port_value)
-                # save_json_file(actuator_get_json)
+                save_ls_file(port_value)
+                save_json_file(actuator_get_json)
                 # get = trans_json(actuator_get_json)
-                if actuators_set_json != None:
-                    for i in range(len(actuators_set_json)):                                      
-                        await websocket.send(json.dumps(actuators_set_json[i]))               
+                # if actuators_set_json != None:
+                #     for i in range(len(actuators_set_json)): 
+                #         #print(actuators_set_json[i])                                     
+                #         await websocket.send(json.dumps(actuators_set_json[i]))               
 
 
 async def evaluate_actor(data_dic, clazz, name):       
@@ -171,16 +172,17 @@ async def evaluate_actor(data_dic, clazz, name):
     if x and y:
         return data_dic 
 
-def set_actuator_json(actor, port_type, alpha):
+def set_actuator_json(actor, port_type, deg):
     port_list = actor[port_type]
     num_port = len(port_list)
     for i in range(num_port):
         port_name = port_list[i]['port']['name']
         if port_name == "COMMANDED_ANGLE".upper():
-            port_list[i]['value']['value'] += 0.1 * alpha
+            port_list[i]['value']['value'] = deg*3.14/180
+            print(port_list[i]['value']['value'])
         elif port_name == "COMMANDED_RPM".upper():
-            port_list[i]['value']['value'] += 0.1 * alpha
-    #print(actor)
+            port_list[i]['value']['value'] = 10
+            print(port_list[i]['value']['value'])
     return actor
 
 def save_ls_file(receivedata): # list
