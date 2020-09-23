@@ -1,0 +1,2 @@
+float32 rudder_angle
+float32 rpm
